@@ -12,69 +12,98 @@
     #map {
       height: 100vh;
     }
-    .legend {
-      background-color: #fff;
-      border-radius: 5px;
-      padding: 10px;
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      width: 250px;
-      opacity: 0.8;
+    /* Splash screen styles */
+    #splash-screen {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      width: 50%;
+      height: 50%;
+      background-color: rgba(255, 255, 255, 0.8);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
     }
-</style>
-
+    #splash-screen p {
+      text-align: center;
+      font-size: 1.2rem;
+      line-height: 1.5;
+      max-width: 800px;
+    }
+    #splash-screen button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #337ab7;
+      color: #fff;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    
+  </style>
 </head>
 <body>
   <div id="map"></div>
-  <div id="legend" class="legend"></div>
+  <div id="splash-screen">
+    <p>This map is the confidential and proprietary information of CDev, LLC ("CDev"). By proceeding, you acknowledge that this map has been developed through the significant effort and expense of CDev. In deciding to view this information, you are agreeing, intending to be legally bound, not to share any of the information without the express written permission of CDev unless compelled by law. You agree that, if you share any such information in violation of this agreement, you will be liable to CDev for any damages CDev sustains therefrom, including lost profits, and you agree that CDev may obtain an injunction against any disclosure without having to prove irreparable harm or post a bond.</p>
+    <br>
+    <button id="splash-screen-button">Continue</button>
+  </div>
   <script>
     // Create map and set view
-  var map = L.map('map').setView([33.868926809303446, -118.0855941955399], 15);
-// Add tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
+    var map = L.map('map').setView([33.868926809303446, -118.0855941955399], 15);
 
-// Load GeoJSON files
-var geojsonUrl1 = 'la.geojson';
-var geojsonUrl2 = 'Artesia_Buffer.geojson';
-$.getJSON(geojsonUrl1, function(data) {
-    var geojsonLayer1 = L.geoJSON(data);
-    geojsonLayer1.addTo(map);
-});
+    // Load GeoJSON files
 
-$.getJSON(geojsonUrl2, function(data) {
-    var geojsonLayer2 = L.geoJSON(data, {
-        style: function (feature) {
-            switch (feature.properties.CD_SetbackType) {
-                case 'Daycare': return {color: 'green'};
-                case 'Churches': return {color: 'red'};
-                default: return {color: 'black'};
-            }
-        },
-        onEachFeature: function (feature, layer) {
-            var popupContent = "<b>SetbackType:</b> " + feature.properties.CD_SetbackType + "<br>" + 
-                               "<b>SiteName:</b> " + feature.properties.SiteName + "<br>" + 
-                               "<b>SiteAddress:</b> " + feature.properties.SiteAddress + "<br>"
-            layer.bindPopup(popupContent);
-        }
+    var geojsonUrl1 = 'la.geojson';
+    var geojsonUrl2 = 'Artesia_Buffer.geojson';
+    var geojsonLayer1, geojsonLayer2;
+    $.getJSON(geojsonUrl1, function(data) {
+        geojsonLayer1 = L.geoJSON(data);
+        $.getJSON(geojsonUrl2, function(data) {
+            geojsonLayer2 = L.geoJSON(data, {
+                style: function (feature) {
+                    switch (feature.properties.CD_SetbackType) {
+                        case 'Daycare': return {color: 'green'};
+                        case 'Churches': return {color: 'red'};
+                        default: return {color: 'black'};
+                    }
+                },
+                onEachFeature: function (feature, layer) {
+                    var popupContent = "<b>SetbackType:</b> " + feature.properties.CD_SetbackType + "<br>" + 
+                                       "<b>SiteName:</b> " + feature.properties.SiteName + "<br>" + 
+                                       "<b>SiteAddress:</b> " + feature.properties.SiteAddress + "<br>";
+                    layer.bindPopup(popupContent);
+                }
+            });
+            var baseMaps = {
+                "Street Map": streetMap,
+                "Satellite Map": satelliteMap
+            };
+            var overlays = {
+                "CD Parcels": geojsonLayer1,
+                "CA Daycare Buffer": geojsonLayer2
+            };
+            L.control.layers(baseMaps, overlays).addTo(map);
+            geojsonLayer1.addTo(map);
+            geojsonLayer2.addTo(map);
+            streetMap.addTo(map);
+        });
     });
-    geojsonLayer2.addTo(map);
-});
 
-// Create legend control
-var legend = L.control({position: 'topright'});
-legend.onAdd = function (map) {
-var div = L.DomUtil.create('div', 'legend');
-div.innerHTML += '<h3>Artesia LosAngeles CA</h3>';
-div.innerHTML += '<p>This map is the confidential and proprietary information of CDev, LLC ("CDev"). By proceeding, you acknowledge that this map has been developed through the significant effort and expense of CDev. In deciding to view this information, you are agreeing, intending to be legally bound, not to share any of the information without the express written permission of CDev unless compelled by law. You agree that, if you share any such information in violation of this agreement, you will be liable to CDev for any damages CDev sustains therefrom, including lost profits, and you agree that CDev may obtain an injunction against any disclosure without having to prove irreparable harm or post a bond.</p><br>'
-// div.innerHTML += '<b>Legend</b><br>';
-// div.innerHTML += '<i style="background: green"></i><span>Daycare</span><br>';
-// div.innerHTML += '<i style="background: red"></i><span>Churches</span><br>';
-return div;
-};
-legend.addTo(map);
+    // Add tile layers
+    var streetMap = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    });
+    var satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+    // Hide splash screen after button click
+    $('#splash-screen-button').on('click', function() {
+        $('#splash-screen').hide();
+    });
   </script>
 </body>
 </html>
