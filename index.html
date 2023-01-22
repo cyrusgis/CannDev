@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+  <style>
+    body {
+    padding: 0;
+    margin: 0;
+}
+    #map {
+      height: 100vh;
+    }
+    .legend {
+      background-color: #fff;
+      border-radius: 5px;
+      padding: 10px;
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 250px;
+      opacity: 0.8;
+    }
+</style>
+
+</head>
+<body>
+  <div id="map"></div>
+  <div id="legend" class="legend"></div>
+  <script>
+    // Create map and set view
+  var map = L.map('map').setView([33.868926809303446, -118.0855941955399], 15);
+// Add tile layer
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+}).addTo(map);
+
+// Load GeoJSON files
+var geojsonUrl1 = 'la.geojson';
+var geojsonUrl2 = 'Artesia_Buffer.geojson';
+$.getJSON(geojsonUrl1, function(data) {
+    var geojsonLayer1 = L.geoJSON(data);
+    geojsonLayer1.addTo(map);
+});
+
+$.getJSON(geojsonUrl2, function(data) {
+    var geojsonLayer2 = L.geoJSON(data, {
+        style: function (feature) {
+            switch (feature.properties.CD_SetbackType) {
+                case 'Daycare': return {color: 'green'};
+                case 'Churches': return {color: 'red'};
+                default: return {color: 'black'};
+            }
+        },
+        onEachFeature: function (feature, layer) {
+            var popupContent = "<b>SetbackType:</b> " + feature.properties.CD_SetbackType + "<br>" + 
+                               "<b>SiteName:</b> " + feature.properties.SiteName + "<br>" + 
+                               "<b>SiteAddress:</b> " + feature.properties.SiteAddress + "<br>"
+            layer.bindPopup(popupContent);
+        }
+    });
+    geojsonLayer2.addTo(map);
+});
+
+// Create legend control
+var legend = L.control({position: 'topright'});
+legend.onAdd = function (map) {
+var div = L.DomUtil.create('div', 'legend');
+div.innerHTML += '<h3>Artesia LosAngeles CA</h3>';
+div.innerHTML += '<p>This map is the confidential and proprietary information of CDev, LLC ("CDev"). By proceeding, you acknowledge that this map has been developed through the significant effort and expense of CDev. In deciding to view this information, you are agreeing, intending to be legally bound, not to share any of the information without the express written permission of CDev unless compelled by law. You agree that, if you share any such information in violation of this agreement, you will be liable to CDev for any damages CDev sustains therefrom, including lost profits, and you agree that CDev may obtain an injunction against any disclosure without having to prove irreparable harm or post a bond.</p><br>'
+// div.innerHTML += '<b>Legend</b><br>';
+// div.innerHTML += '<i style="background: green"></i><span>Daycare</span><br>';
+// div.innerHTML += '<i style="background: red"></i><span>Churches</span><br>';
+return div;
+};
+legend.addTo(map);
+  </script>
+</body>
+</html>
